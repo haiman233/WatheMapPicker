@@ -3,7 +3,6 @@ package net.nebula.wathemappicker.client.mixin;
 import dev.doctor4t.wathe.client.gui.screen.ingame.LimitedHandledScreen;
 import dev.doctor4t.wathe.client.gui.screen.ingame.LimitedInventoryScreen;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.hud.spectator.SpectatorMenu;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Items;
 import net.minecraft.screen.PlayerScreenHandler;

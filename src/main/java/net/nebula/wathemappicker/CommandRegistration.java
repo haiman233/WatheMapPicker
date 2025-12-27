@@ -16,6 +16,9 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import static net.nebula.wathemappicker.Wathemappicker.SERVER_INSTANCE;
+import static net.nebula.wathemappicker.Wathemappicker.Vec3dToBlockPos;
+
 
 public class CommandRegistration {
     public static String currentDimension = "";
@@ -48,7 +51,7 @@ public class CommandRegistration {
     }
 
     @Nullable
-    private static RegistryKey<World> getWorldByPath(MinecraftServer server, String path) {
+    public static RegistryKey<World> getWorldByPath(MinecraftServer server, String path) {
         for (RegistryKey<World> key : server.getWorldRegistryKeys()) {
             Identifier id = key.getValue();
             if (!isVanillaDimension(id) && id.getPath().equals(path)) {
@@ -83,6 +86,18 @@ public class CommandRegistration {
             );
         }
         currentDimension = path;
+
+
+        // Update respawn position for all players
+        for (ServerPlayerEntity player : SERVER_INSTANCE.getPlayerManager().getPlayerList()) {
+            player.setSpawnPoint(
+                    CommandRegistration.getWorldByPath(SERVER_INSTANCE, path),                           // World
+                    Vec3dToBlockPos(spawnPos.pos),                            // BlockPos
+                    spawnPos.yaw,                            // yaw
+                    true,                                    // force spawn
+                    false                                    // keepBedSpawn
+            );
+        }
     }
 
     public static boolean setMap(MinecraftServer server, String dimensionPath) {
@@ -115,11 +130,11 @@ public class CommandRegistration {
     }
 
     public static boolean teleportPlayer(ServerPlayerEntity player) {
-        RegistryKey<World> worldKey = getWorldByPath(Wathemappicker.SERVER_INSTANCE, currentDimension);
+        RegistryKey<World> worldKey = getWorldByPath(SERVER_INSTANCE, currentDimension);
 
         if (worldKey == null) return false;
 
-        ServerWorld world = Wathemappicker.SERVER_INSTANCE.getWorld(worldKey);
+        ServerWorld world = SERVER_INSTANCE.getWorld(worldKey);
         if (world == null) return false;
 
         MapVariablesWorldComponent spawn = MapVariablesWorldComponent.KEY.get(world);

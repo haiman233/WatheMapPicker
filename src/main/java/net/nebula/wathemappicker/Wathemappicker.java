@@ -1,6 +1,8 @@
 package net.nebula.wathemappicker;
 
 import dev.doctor4t.wathe.api.event.GameEvents;
+import dev.doctor4t.wathe.cca.GameWorldComponent;
+import dev.doctor4t.wathe.cca.MapVariablesWorldComponent;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -8,15 +10,17 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.nebula.wathemappicker.packet.DimensionsS2CPacket;
 import net.nebula.wathemappicker.packet.MapVoteC2SPacket;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static net.nebula.wathemappicker.CommandRegistration.isVanillaDimension;
-import static net.nebula.wathemappicker.CommandRegistration.teleportPlayer;
+import static net.nebula.wathemappicker.CommandRegistration.*;
 
 public class Wathemappicker implements ModInitializer {
 
@@ -34,7 +38,24 @@ public class Wathemappicker implements ModInitializer {
         GameEvents.ON_GAME_STOP.register(gameMode -> {
             String win = MapVoteC2SPacket.getWinningMap();
             if (win == null) return;
-            CommandRegistration.setMap(SERVER_INSTANCE, win.substring(win.indexOf(":") + 1));
+            if (!Objects.equals(currentDimension, win)) {
+                String path =  win.substring(win.indexOf(":") + 1);
+                CommandRegistration.setMap(SERVER_INSTANCE, path);
+                // Get spawn position from your MapVariablesWorldComponent
+                MapVariablesWorldComponent spawnComponent = MapVariablesWorldComponent.KEY.get(SERVER_INSTANCE.getWorld(CommandRegistration.getWorldByPath(SERVER_INSTANCE, path)));
+                MapVariablesWorldComponent.PosWithOrientation spawnPos = spawnComponent.getSpawnPos();
+
+                // Update respawn position for all players
+                for (ServerPlayerEntity player : SERVER_INSTANCE.getPlayerManager().getPlayerList()) {
+                    player.setSpawnPoint(
+                            CommandRegistration.getWorldByPath(SERVER_INSTANCE, path),                           // World
+                            Vec3dToBlockPos(spawnPos.pos),                            // BlockPos
+                            spawnPos.yaw,                            // yaw
+                            true,                                    // force spawn
+                            false                                    // keepBedSpawn
+                    );
+                }
+            }
         });
     }
 
@@ -47,8 +68,10 @@ public class Wathemappicker implements ModInitializer {
             ServerPlayNetworking.send(serverPlayNetworkHandler.getPlayer(), new DimensionsS2CPacket(getDimensionString(minecraftServer)));
             MapVoteC2SPacket.removeVote(serverPlayNetworkHandler.getPlayer());
 
-            if (!Objects.equals(CommandRegistration.currentDimension, serverPlayNetworkHandler.getPlayer().getWorld().getRegistryKey().getValue().toString())) {
-                teleportPlayer(serverPlayNetworkHandler.getPlayer());
+            if (GameWorldComponent.KEY.get(serverPlayNetworkHandler.getPlayer().getWorld()).isRunning()) {
+                if (!Objects.equals(CommandRegistration.currentDimension, serverPlayNetworkHandler.getPlayer().getWorld().getRegistryKey().getValue().toString())) {
+                    teleportPlayer(serverPlayNetworkHandler.getPlayer());
+                }
             }
         }));
 
@@ -70,6 +93,15 @@ public class Wathemappicker implements ModInitializer {
                         .filter(id -> !isVanillaDimension(id))
                         .map(Identifier::toString)
                         .collect(Collectors.joining(","));
+
+    }
+
+    public static BlockPos Vec3dToBlockPos(Vec3d vec3d) {
+        return new BlockPos(
+                (int) Math.round(vec3d.x),
+                (int) Math.round(vec3d.y),
+                (int) Math.round(vec3d.z)
+        );
 
     }
 }

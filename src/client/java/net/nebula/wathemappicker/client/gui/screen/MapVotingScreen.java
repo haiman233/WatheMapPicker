@@ -11,6 +11,7 @@ import net.minecraft.text.Text;
 import net.nebula.wathemappicker.MapVotePlayerComponent;
 import net.nebula.wathemappicker.client.gui.widget.MapVotingWidget;
 import net.nebula.wathemappicker.packet.MapVoteC2SPacket;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -101,5 +102,15 @@ public class MapVotingScreen extends Screen {
     @Override
     public boolean shouldPause() {
         return false;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_E) {
+            this.client.setScreen(null);
+            return true;
+        }
+
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }
