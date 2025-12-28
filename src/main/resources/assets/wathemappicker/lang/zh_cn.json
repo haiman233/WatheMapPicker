@@ -1,6 +1,7 @@
 {
-  "nebula.map_voting.tooltip": "地图投票",
-  "nebula.map_voting.townofharpy": "哈比小镇",
-  "nebula.map_voting.borealisexpress": "北极快车",
-  "nebula.map_voting.harpyexpress": "哈比快车"
+  "map_voting.wathemappicker.tooltip": "地图投票",
+  "map_voting.map.townofharpy": "哈比小镇",
+  "map_voting.map.townofharpy.item": "minecraft:diamond",
+  "map_voting.map.borealisexpress": "北极快车",
+  "map_voting.map.harpyexpress": "哈比快车"
 }
